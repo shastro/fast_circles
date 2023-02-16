@@ -1,6 +1,7 @@
 use crate::ball::*;
 use crate::boundary::*;
 use nannou::prelude::*;
+use random::Source;
 
 pub struct Solver<T: Boundary> {
     pub gravity: Vec2,
@@ -40,7 +41,8 @@ impl<T: Boundary> Solver<T> {
     fn apply_gravity(&mut self) {
         self.balls
             .iter_mut()
-            .for_each(|x| x.accelerate(self.gravity));
+            // .for_each(|x| x.accelerate(self.gravity));
+            .for_each(|x| x.accelerate(-2000. * x.pos.normalize()));
     }
 
     pub fn solve_collisions(&mut self) {
@@ -70,20 +72,26 @@ impl<T: Boundary> Solver<T> {
 
     pub fn init_balls(ball_radius: f32) -> Vec<Ball> {
         let mut vec_balls = Vec::<Ball>::new();
-        let max = 35; // try 60
+        let max = 30; // try 60
         let hue_step = 360. / ((max * max) as f32);
         let mut i = 0.;
-        let xpos = 18. * ball_radius;
-        let ypos = 18. * ball_radius;
+        let max_radius = ball_radius;
+        let min_radius = 3.0;
+        let radius_range = max_radius - min_radius;
+        let xpos = 0. * ball_radius;
+        let ypos = 0. * ball_radius;
+        let mut source = random::default(42);
         for x in 1..max {
             let xd = ((x as f32) * 2. * ball_radius) - (max / 2) as f32 * 2. * ball_radius + xpos; // and minus 5
             for y in 1..max {
+                let rand_radius = radius_range * source.read_f64() as f32 + min_radius;
+                println!("{}", rand_radius);
                 let yd =
                     ((y as f32) * 2. * ball_radius) - (max / 2) as f32 * 2. * ball_radius + ypos;
                 vec_balls.push(Ball {
                     prev_pos: Vec2::new(xd, yd),
                     pos: Vec2::new(xd, yd),
-                    radius: ball_radius,
+                    radius: rand_radius,
                     color: Hsv::new(i * hue_step, 1., 1.),
                     acc: Vec2::ZERO,
                 });

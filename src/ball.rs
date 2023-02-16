@@ -23,6 +23,9 @@ impl Ball {
     }
     pub fn update(&mut self, dt: f32) {
         let vel = self.pos - self.prev_pos;
+        self.color = Hsv::new(vel.length_squared() / 100. * 480., 1., 1.);
+        // self.radius = 10. * (vel.length_squared() / 2.);
+        // self.radius = self.radius.clamp(8., 8.);
         self.prev_pos = self.pos;
         self.pos = self.pos + vel + self.acc * (dt * dt);
         self.acc = Vec2::ZERO;
