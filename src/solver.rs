@@ -14,7 +14,7 @@ impl<T: Boundary> Solver<T> {
         self.apply_gravity();
         self.apply_boundaries();
         self.solve_collisions();
-        self.update_positions(dt);
+        self.update_positions(dt / (self.substeps as f32));
     }
 
     fn update_positions(&mut self, dt: f32) {
@@ -70,7 +70,7 @@ impl<T: Boundary> Solver<T> {
 
     pub fn init_balls(ball_radius: f32) -> Vec<Ball> {
         let mut vec_balls = Vec::<Ball>::new();
-        let max = 5;
+        let max = 49;
         let hue_step = 360. / ((max * max) as f32);
         let mut i = 0.;
         for x in 1..max {

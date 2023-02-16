@@ -18,15 +18,15 @@ fn model(_app: &App) -> Model {
     Model {
         solver: Solver {
             gravity: Vec2::new(0.0, -100.),
-            balls: Solver::<CircleBound>::init_balls(15.),
+            balls: Solver::<CircleBound>::init_balls(5.),
             substeps: 8,
             boundaries: vec![CircleBound {
                 pos: Vec2::new(0., 0.),
-                radius: 100.,
+                radius: 400.,
                 kind: BoundaryType::Inner,
             }],
         },
-        timestep: 0.01,
+        timestep: 0.1,
     }
 }
 
