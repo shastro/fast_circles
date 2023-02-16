@@ -8,14 +8,26 @@ pub struct Ball {
 }
 
 impl Ball {
+    pub fn detect_pair_collide(a: &Ball, b: &Ball) -> bool {
+        let sum_radii_sqr = (a.radius + b.radius).pow(2);
+        let dpos = a.pos - b.pos;
+        dpos.length_squared() < sum_radii_sqr
+    }
+
+    pub fn resolve_pair_collide(a: &mut Ball, b: &mut Ball) {
+        let axis = (a.pos - b.pos).normalize();
+        let overlap = (a.radius + b.radius) - (a.pos - b.pos).length();
+        a.pos += axis * (0.5 * overlap);
+        b.pos -= axis * (0.5 * overlap);
+    }
     pub fn update(&mut self, dt: f32) {
-        let term1 = 2. * self.pos - self.prev_pos;
+        let vel = self.pos - self.prev_pos;
         self.prev_pos = self.pos;
-        self.pos = term1 + self.acc * (dt.powi(2) as f32);
+        self.pos = self.pos + vel + self.acc * (dt * dt);
         self.acc = Vec2::ZERO;
     }
 
     pub fn accelerate(&mut self, acc: Vec2) {
-        self.acc = acc;
+        self.acc += acc;
     }
 }

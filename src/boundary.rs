@@ -11,10 +11,10 @@ pub trait Boundary {
     fn kind(&self) -> BoundaryType;
     fn apply_outer_constraint(&self, ball: &mut Ball);
     fn apply_inner_constraint(&self, ball: &mut Ball);
-    fn detect_collision(&self, ball: &Ball) -> bool;
+    fn detect_inner_collision(&self, ball: &Ball) -> bool;
+    fn detect_outer_collision(&self, ball: &Ball) -> bool;
+    fn draw(&self, draw: &Draw);
 }
-
-struct RectBound {}
 
 pub struct CircleBound {
     pub pos: Vec2,
@@ -28,11 +28,26 @@ impl Boundary for CircleBound {
     }
     fn apply_inner_constraint(&self, ball: &mut Ball) {
         let normal = (ball.pos - self.pos).normalize();
-        ball.pos = normal * self.radius + normal * (0.5 * ball.radius);
+        ball.pos = self.pos + normal * (self.radius - ball.radius);
     }
-    fn apply_outer_constraint(&self, ball: &mut Ball) {}
-    fn detect_collision(&self, ball: &Ball) -> bool {
+    fn apply_outer_constraint(&self, ball: &mut Ball) {
+        let dist = (ball.pos - self.pos).length();
+        let normal = (ball.pos - self.pos).normalize();
+        ball.pos = self.pos + normal * (dist + ball.radius);
+    }
+    fn detect_inner_collision(&self, ball: &Ball) -> bool {
+        (ball.pos - self.pos).length_squared() > (self.radius - ball.radius).pow(2)
+    }
+    fn detect_outer_collision(&self, ball: &Ball) -> bool {
         let sum_radii = self.radius + ball.radius;
         (ball.pos - self.pos).length_squared() < sum_radii.pow(2)
+    }
+
+    fn draw(&self, draw: &Draw) {
+        draw.ellipse()
+            .radius(self.radius)
+            .no_fill()
+            .stroke_weight(1.)
+            .stroke(WHITE);
     }
 }

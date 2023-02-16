@@ -18,10 +18,11 @@ fn model(_app: &App) -> Model {
     Model {
         solver: Solver {
             gravity: Vec2::new(0.0, -100.),
-            balls: Solver::<CircleBound>::init_balls(5.),
+            balls: Solver::<CircleBound>::init_balls(15.),
+            substeps: 8,
             boundaries: vec![CircleBound {
                 pos: Vec2::new(0., 0.),
-                radius: 1000.,
+                radius: 200.,
                 kind: BoundaryType::Inner,
             }],
         },
@@ -37,6 +38,7 @@ fn view(_app: &App, _model: &Model, frame: Frame) {
     let draw = _app.draw();
     frame.clear(BLACK);
 
+    draw.ellipse().x_y(10., 10.).radius(10.).color(WHITE);
     _model.solver.draw(&draw);
     draw.to_frame(_app, &frame).unwrap();
 }
