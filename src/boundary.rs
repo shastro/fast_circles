@@ -31,16 +31,14 @@ impl Boundary for CircleBound {
         ball.pos = self.pos + normal * (self.radius - ball.radius);
     }
     fn apply_outer_constraint(&self, ball: &mut Ball) {
-        let dist = (ball.pos - self.pos).length();
         let normal = (ball.pos - self.pos).normalize();
-        ball.pos = self.pos + normal * (dist + ball.radius);
+        ball.pos = self.pos + normal * (self.radius + ball.radius);
     }
     fn detect_inner_collision(&self, ball: &Ball) -> bool {
         (ball.pos - self.pos).length_squared() > (self.radius - ball.radius).pow(2)
     }
     fn detect_outer_collision(&self, ball: &Ball) -> bool {
-        let sum_radii = self.radius + ball.radius;
-        (ball.pos - self.pos).length_squared() < sum_radii.pow(2)
+        (ball.pos - self.pos).length_squared() < (self.radius + ball.radius).pow(2)
     }
 
     fn draw(&self, draw: &Draw) {
@@ -48,6 +46,7 @@ impl Boundary for CircleBound {
             .radius(self.radius)
             .no_fill()
             .stroke_weight(1.)
-            .stroke(WHITE);
+            .stroke(WHITE)
+            .xy(self.pos);
     }
 }

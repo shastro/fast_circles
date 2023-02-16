@@ -70,13 +70,16 @@ impl<T: Boundary> Solver<T> {
 
     pub fn init_balls(ball_radius: f32) -> Vec<Ball> {
         let mut vec_balls = Vec::<Ball>::new();
-        let max = 49;
+        let max = 35; // try 60
         let hue_step = 360. / ((max * max) as f32);
         let mut i = 0.;
+        let xpos = 18. * ball_radius;
+        let ypos = 18. * ball_radius;
         for x in 1..max {
-            let xd = ((x as f32) * 2. * ball_radius) - (max / 2) as f32 * 2. * ball_radius;
+            let xd = ((x as f32) * 2. * ball_radius) - (max / 2) as f32 * 2. * ball_radius + xpos; // and minus 5
             for y in 1..max {
-                let yd = ((y as f32) * 2. * ball_radius) - (max / 2) as f32 * 2. * ball_radius;
+                let yd =
+                    ((y as f32) * 2. * ball_radius) - (max / 2) as f32 * 2. * ball_radius + ypos;
                 vec_balls.push(Ball {
                     prev_pos: Vec2::new(xd, yd),
                     pos: Vec2::new(xd, yd),

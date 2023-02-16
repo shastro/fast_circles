@@ -20,12 +20,30 @@ fn model(_app: &App) -> Model {
             gravity: Vec2::new(0.0, -100.),
             balls: Solver::<CircleBound>::init_balls(5.),
             substeps: 8,
-            boundaries: vec![CircleBound {
-                pos: Vec2::new(0., 0.),
-                radius: 400.,
-                kind: BoundaryType::Inner,
-            }],
+            boundaries: vec![
+                CircleBound {
+                    pos: Vec2::new(0., 0.),
+                    radius: 400.,
+                    kind: BoundaryType::Inner,
+                },
+                CircleBound {
+                    pos: Vec2::new(0., -300.),
+                    radius: 50.,
+                    kind: BoundaryType::Outer,
+                },
+                CircleBound {
+                    pos: Vec2::new(-125., -300.),
+                    radius: 50.,
+                    kind: BoundaryType::Outer,
+                },
+                CircleBound {
+                    pos: Vec2::new(125., -300.),
+                    radius: 50.,
+                    kind: BoundaryType::Outer,
+                },
+            ],
         },
+
         timestep: 0.1,
     }
 }
