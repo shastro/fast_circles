@@ -48,12 +48,9 @@ impl<T: Boundary> Solver<T> {
             for i in 0..self.balls.len() {
                 let (before, since) = self.balls.split_at_mut(i);
                 let (mut current, after) = since.split_first_mut().unwrap();
-                for (mut other_left, mut other_right) in before.iter_mut().zip(after) {
-                    if (Ball::detect_pair_collide(&current, &other_left)) {
-                        Ball::resolve_pair_collide(&mut current, &mut other_left);
-                    }
-                    if (Ball::detect_pair_collide(&current, &other_right)) {
-                        Ball::resolve_pair_collide(&mut current, &mut other_right);
+                for mut other in before.iter_mut().chain(after) {
+                    if Ball::detect_pair_collide(&current, &other) {
+                        Ball::resolve_pair_collide(&mut current, &mut other);
                     }
                 }
             }
@@ -62,7 +59,10 @@ impl<T: Boundary> Solver<T> {
 
     pub fn draw(&self, draw: &Draw) {
         self.balls.iter().for_each(|ball| {
-            draw.ellipse().color(WHITE).xy(ball.pos).radius(ball.radius);
+            draw.ellipse()
+                .color(ball.color)
+                .xy(ball.pos)
+                .radius(ball.radius);
         });
 
         self.boundaries.iter().for_each(|bound| bound.draw(draw));
@@ -70,16 +70,21 @@ impl<T: Boundary> Solver<T> {
 
     pub fn init_balls(ball_radius: f32) -> Vec<Ball> {
         let mut vec_balls = Vec::<Ball>::new();
-        for x in 1..5 {
-            let xd = ((x as f32) * 2. * ball_radius) - 5. * 2. * ball_radius;
-            for y in 1..5 {
-                let yd = ((y as f32) * 2. * ball_radius) - 5. * 2. * ball_radius;
+        let max = 5;
+        let hue_step = 360. / ((max * max) as f32);
+        let mut i = 0.;
+        for x in 1..max {
+            let xd = ((x as f32) * 2. * ball_radius) - (max / 2) as f32 * 2. * ball_radius;
+            for y in 1..max {
+                let yd = ((y as f32) * 2. * ball_radius) - (max / 2) as f32 * 2. * ball_radius;
                 vec_balls.push(Ball {
                     prev_pos: Vec2::new(xd, yd),
                     pos: Vec2::new(xd, yd),
                     radius: ball_radius,
+                    color: Hsv::new(i * hue_step, 1., 1.),
                     acc: Vec2::ZERO,
                 });
+                i += 1.;
             }
         }
         vec_balls

@@ -22,7 +22,7 @@ fn model(_app: &App) -> Model {
             substeps: 8,
             boundaries: vec![CircleBound {
                 pos: Vec2::new(0., 0.),
-                radius: 200.,
+                radius: 100.,
                 kind: BoundaryType::Inner,
             }],
         },
@@ -38,7 +38,6 @@ fn view(_app: &App, _model: &Model, frame: Frame) {
     let draw = _app.draw();
     frame.clear(BLACK);
 
-    draw.ellipse().x_y(10., 10.).radius(10.).color(WHITE);
     _model.solver.draw(&draw);
     draw.to_frame(_app, &frame).unwrap();
 }

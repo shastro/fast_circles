@@ -1,10 +1,11 @@
+use nannou::color::Hsv;
 use nannou::prelude::*;
-
 pub struct Ball {
     pub prev_pos: Vec2,
     pub pos: Vec2,
     pub radius: f32,
     pub acc: Vec2,
+    pub color: Hsv,
 }
 
 impl Ball {
