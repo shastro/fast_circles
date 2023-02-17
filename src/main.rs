@@ -22,8 +22,9 @@ fn model(_app: &App) -> Model {
     Model {
         solver: Solver {
             gravity: Vec2::new(0.0, -2000.),
-            balls: Solver::<CircleBound>::init_balls(8.),
-            substeps: 8,
+            balls: Solver::<CircleBound>::init_balls(5.),
+            hash: SpatialHash::new(5., _app.window_rect().wh().x, _app.window_rect().wh().y),
+            substeps: 10,
             boundaries: vec![
                 CircleBound {
                     pos: Vec2::new(0., 0.),

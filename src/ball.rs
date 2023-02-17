@@ -1,5 +1,6 @@
 use nannou::color::Hsv;
 use nannou::prelude::*;
+
 pub struct Ball {
     pub prev_pos: Vec2,
     pub pos: Vec2,
@@ -25,7 +26,7 @@ impl Ball {
         let vel = self.pos - self.prev_pos;
         self.color = Hsv::new(vel.length_squared() / 100. * 480., 1., 1.);
         // self.radius = 10. * (vel.length_squared() / 2.);
-        // self.radius = self.radius.clamp(8., 8.);
+        // self.radius = self.radius.clamp(2., 4.);
         self.prev_pos = self.pos;
         self.pos = self.pos + vel + self.acc * (dt * dt);
         self.acc = Vec2::ZERO;

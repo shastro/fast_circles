@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 nannou="0.17"
 random="0.13.2"
+grid="0.9.0"
