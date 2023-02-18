@@ -19,8 +19,8 @@ impl Ball {
     pub fn resolve_pair_collide(a: &mut Ball, b: &mut Ball) {
         let axis = (a.pos - b.pos).normalize();
         let overlap = (a.radius + b.radius) - (a.pos - b.pos).length();
-        a.pos += axis * (0.5 * overlap);
-        b.pos -= axis * (0.5 * overlap);
+        a.pos = a.pos + axis * (0.5 * overlap);
+        b.pos = b.pos - axis * (0.5 * overlap);
     }
     pub fn update(&mut self, dt: f32) {
         let vel = self.pos - self.prev_pos;
