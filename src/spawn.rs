@@ -11,6 +11,7 @@ pub trait Spawner {
         time: f32,
         frame_count: usize,
         angle_driver: D,
+        color_map: &mut Vec<Rgba>,
     );
     fn reset(&mut self);
 }
@@ -67,21 +68,30 @@ impl Spawner for LinearSpawner {
         time: f32,
         frame_count: usize,
         angle_driver: D,
+        color_map: &mut Vec<Rgba>,
     ) {
         if frame_count % self.spawn_period == 0 {
             let angle_offset = self.angle + (angle_driver)(time);
             let normal = Vec2::new(1., 0.).rotate(angle_offset).normalize();
             let tangent = Vec2::new(1., 0.).rotate(angle_offset + PI / 2.).normalize();
-            let mut spawn_pos = self.pos;
-            // println!("{}", self.spawn_count);
+            let space = 2. * ball_radius;
+            println!("Spawn Count {} Frame {}", self.spawn_count, frame_count);
             for i in 0..self.rows {
-                spawn_pos = self.pos + (i as f32) * 2. * ball_radius * tangent;
+                let mut color = Rgba::new(1., 1., 1., 1.);
+                let spawn_pos = self.pos - (self.rows as f32 / 2. * space * tangent)
+                    + (i as f32) * space * tangent;
+                if color_map.get(self.spawn_count).is_some() {
+                    color = *color_map.get(self.spawn_count).unwrap();
+                } else {
+                    color_map.push(color);
+                }
+                let color_hsv = Hsv::from(color);
                 if self.spawn_count < self.max_spawn {
                     vec_balls.push(RefCell::new(Ball {
                         prev_pos: spawn_pos,
                         pos: spawn_pos + self.spawn_velocity * normal,
                         radius: ball_radius,
-                        color: Hsv::new(0., 0., 1.),
+                        color: color_hsv,
                         acc: Vec2::ZERO,
                     }));
 

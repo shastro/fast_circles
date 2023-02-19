@@ -21,10 +21,6 @@ pub enum ColorMode {
     Index,
 }
 
-pub struct ColorData {
-    colormap: Vec<Rgba>,
-}
-
 pub struct Solver<T: Boundary> {
     pub gravity: Vec2,
     pub balls: Vec<RefCell<Ball>>,
@@ -32,6 +28,7 @@ pub struct Solver<T: Boundary> {
     pub substeps: usize,
     pub hash: SpatialHash,
     pub detect_mode: DetectMode,
+    pub colormap: Vec<Rgba>,
 }
 
 impl<T: Boundary> Solver<T> {
@@ -48,22 +45,22 @@ impl<T: Boundary> Solver<T> {
     }
 
     pub fn set_image_colors(&mut self, image: &mut DynamicImage) {
-        let width_real = 1000.;
-        let height_real = 1000.;
+        let pixel_size_real = 0.8;
         let image = image.to_rgba8();
+        let width_real = image.width() as f32 * pixel_size_real;
+        let height_real = image.height() as f32 * pixel_size_real;
         let image_pos = Vec2::new(-width_real / 2., height_real / 2.);
         let num_x_pixels = image.width();
         let num_y_pixels = image.height();
-        let pixel_size_real_x = width_real as f32 / num_x_pixels as f32;
-        let pixel_size_real_y = height_real as f32 / num_y_pixels as f32;
+        let pixel_size_real = pixel_size_real as f32;
 
         for i in 0..self.balls.len() {
             let mut ball = self.balls[i].borrow_mut();
             // Get relative to corner an index based on the pixel size
-            let mut py = (((height_real / 2.0) - ball.pos.y) / pixel_size_real_y) as usize;
-            let mut px = (((width_real / 2.0) + ball.pos.x) / pixel_size_real_x) as usize;
-            px = px.clamp(0, num_x_pixels as usize);
-            py = py.clamp(0, num_y_pixels as usize);
+            let mut py = (((height_real / 2.0) - ball.pos.y) / pixel_size_real) as usize;
+            let mut px = (((width_real / 2.0) + ball.pos.x) / pixel_size_real) as usize;
+            px = px.clamp(0, (num_x_pixels - 1) as usize);
+            py = py.clamp(0, (num_y_pixels - 1) as usize);
             let rgba = image.get_pixel(px as u32, py as u32);
             let r = rgba[0] as f32 / 255.;
             let g = rgba[1] as f32 / 255.;
@@ -71,6 +68,7 @@ impl<T: Boundary> Solver<T> {
             let a = rgba[3] as f32 / 255.;
             // println!("{} {} {} {}", r, g, b, a);
             ball.color = Hsv::from(Rgb::new(r, g, b));
+            self.colormap[i] = Rgba::new(r, g, b, a);
         }
     }
 
@@ -185,11 +183,11 @@ impl<T: Boundary> Solver<T> {
     fn apply_gravity(&mut self) {
         self.balls
             .iter_mut()
-            // .for_each(|x| x.borrow_mut().accelerate(self.gravity));
-            .for_each(|x| {
-                let pos = x.borrow().pos;
-                x.borrow_mut().accelerate(-20000. * pos.normalize())
-            });
+            .for_each(|x| x.borrow_mut().accelerate(self.gravity));
+        // .for_each(|x| {
+        //     let pos = x.borrow().pos;
+        //     x.borrow_mut().accelerate(-20000. * pos.normalize())
+        // });
     }
 
     pub fn solve_collisions(&mut self) {
