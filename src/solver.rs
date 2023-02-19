@@ -29,6 +29,7 @@ pub struct Solver<T: Boundary> {
     pub hash: SpatialHash,
     pub detect_mode: DetectMode,
     pub colormap: Vec<Rgba>,
+    pub pixel_scale: f32,
 }
 
 impl<T: Boundary> Solver<T> {
@@ -45,7 +46,7 @@ impl<T: Boundary> Solver<T> {
     }
 
     pub fn set_image_colors(&mut self, image: &mut DynamicImage) {
-        let pixel_size_real = 0.8;
+        let pixel_size_real = self.pixel_scale;
         let image = image.to_rgba8();
         let width_real = image.width() as f32 * pixel_size_real;
         let height_real = image.height() as f32 * pixel_size_real;

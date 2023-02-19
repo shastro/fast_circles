@@ -19,7 +19,7 @@ fn main() {
 }
 
 struct Model {
-    solver: Solver<CircleBound>,
+    solver: Solver<RectBound>,
     timestep: f32,
     ball_radius: f32,
     spawners: Vec<LinearSpawner>,
@@ -34,13 +34,21 @@ fn model(_app: &App) -> Model {
     let ball_radius = 5.;
     Model {
         ball_radius,
-        frames_for_color_reset: 1500,
+        frames_for_color_reset: 2000,
         boundary_time: 0.,
         sync_frames: 0,
         sim_runs: 0,
-        color_image: Reader::open("mandel.png").unwrap().decode().unwrap(),
+        color_image: Reader::open("cat.jpg").unwrap().decode().unwrap(),
         spawners: vec![
-            LinearSpawner::new(Vec2::new(0., 200.), -PI / 2., 3, 6., 15, false, 5500),
+            LinearSpawner::new(
+                Vec2::new(-400., 400.),
+                0.7 * -PI / 4.,
+                2,
+                5.,
+                10,
+                false,
+                9530,
+            ),
             // LinearSpawner::new(Vec2::new(150., 200.), PI, 3, 5., 10, false, 6074),
             // LinearSpawner::new(Vec2::new(-150., -150.), 0., 6, 4., 5, false),
             // LinearSpawner::new(Vec2::new(150., -150.), 0., 6, 4., 5, false),
@@ -49,31 +57,44 @@ fn model(_app: &App) -> Model {
         solver: Solver {
             gravity: Vec2::new(0.0, -20000.),
             balls: Solver::<CircleBound>::init_balls(ball_radius),
-            hash: SpatialHash::new(ball_radius, 1500., 1500.),
+            hash: SpatialHash::new(ball_radius, 1000., 1000.),
             substeps: 10,
+            pixel_scale: 1000. / 250.,
             detect_mode: DetectMode::SpatialPartition,
             colormap: vec![],
             boundaries: vec![
-                CircleBound {
+                // CircleBound {
+                //     pos: Vec2::new(0., 0.),
+                //     radius: 400.,
+                //     kind: BoundaryType::Inner,
+                // },
+                // CircleBound {
+                //     pos: Vec2::new(400., 0.),
+                //     radius: 100.,
+                //     kind: BoundaryType::Outer,
+                // },
+                // CircleBound {
+                //     pos: Vec2::new(2000., 2000.),
+                //     radius: 80.,
+                //     kind: BoundaryType::Outer,
+                // },
+                // CircleBound {
+                //     pos: Vec2::new(0., -200.),
+                //     radius: 50.,
+                //     kind: BoundaryType::Outer,
+                // },
+                RectBound {
                     pos: Vec2::new(0., 0.),
-                    radius: 400.,
                     kind: BoundaryType::Inner,
+                    width: 900.,
+                    height: 900.,
                 },
-                CircleBound {
-                    pos: Vec2::new(400., 0.),
-                    radius: 100.,
-                    kind: BoundaryType::Outer,
-                },
-                CircleBound {
-                    pos: Vec2::new(2000., 2000.),
-                    radius: 80.,
-                    kind: BoundaryType::Outer,
-                },
-                CircleBound {
-                    pos: Vec2::new(0., -200.),
-                    radius: 50.,
-                    kind: BoundaryType::Outer,
-                },
+                // RectBound {
+                //     pos: Vec2::new(0., 0.),
+                //     kind: BoundaryType::Outer,
+                //     width: 300.,
+                //     height: 100.,
+                // },
             ],
         },
 
@@ -137,7 +158,7 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
 
 fn view(_app: &App, _model: &Model, frame: Frame) {
     let draw = _app.draw();
-    frame.clear(DARKMAGENTA);
+    frame.clear(BLACK);
 
     _model.solver.draw(&draw);
     draw.to_frame(_app, &frame).unwrap();
