@@ -1,10 +1,29 @@
 use crate::ball::*;
 use crate::boundary::*;
-use grid::*;
+use crate::partition::*;
+use nannou::color::Rgba;
+use nannou::image::io::Reader;
+use nannou::image::DynamicImage;
 use nannou::prelude::*;
 use random::Source;
 use std::cell::RefCell;
+use std::io::Cursor;
 use std::time::Instant;
+
+pub enum DetectMode {
+    SpatialPartition,
+    Slow,
+}
+
+pub enum ColorMode {
+    Velocity,
+    Collide,
+    Index,
+}
+
+pub struct ColorData {
+    colormap: Vec<Rgba>,
+}
 
 pub struct Solver<T: Boundary> {
     pub gravity: Vec2,
@@ -12,94 +31,59 @@ pub struct Solver<T: Boundary> {
     pub boundaries: Vec<T>,
     pub substeps: usize,
     pub hash: SpatialHash,
-}
-
-pub struct SpatialHash {
-    grid: Grid<Vec<usize>>,
-    resolution: f32,
-    win_width: f32,
-    win_height: f32,
-}
-
-impl SpatialHash {
-    pub fn new(radius: f32, win_width: f32, win_height: f32) -> Self {
-        let res = 2. * radius;
-        let nrow = (win_height / res) as usize + 1;
-        let ncol = (win_width / res) as usize + 1;
-        // let nrow = (1000. / res) as usize + 1;
-        // let ncol = (1000. / res) as usize + 1;
-        let grid = Grid::new(ncol, nrow);
-        SpatialHash {
-            grid: grid,
-            resolution: res,
-            win_height: win_height,
-            win_width: win_width,
-        }
-    }
-
-    pub fn hash(&mut self, pos: Vec2, index: usize) {
-        // println!("{:?}", pos);
-        let mut px = 0.;
-        let mut py = 0.;
-        py = ((self.win_height / 2.0) - pos.y) / self.resolution;
-        px = ((self.win_width / 2.0) + pos.x) / self.resolution;
-        // println!("{} {}", px, py);
-        let list = self.grid.get_mut(py as usize, px as usize);
-        if list.is_some() {
-            list.unwrap().push(index);
-        }
-    }
-
-    pub fn draw(&self, draw: &Draw) {
-        // Detect collisions
-        let (rows, cols) = self.grid.size();
-        // println!("{} {}", rows, cols);
-        for cr in 0..rows {
-            for cc in 0..cols {
-                if (self.grid.get(cr, cc).is_some()) {
-                    let items: &Vec<usize> = self.grid.get(cr, cc).unwrap();
-                    if !items.is_empty() {
-                        draw.rect()
-                            .xy(Vec2::new(
-                                (cc as f32 * self.resolution) - self.win_width / 2.0,
-                                (-1. * cr as f32 * self.resolution) + self.win_height / 2.0,
-                            ))
-                            .wh(Vec2::new(self.resolution, self.resolution))
-                            .stroke(WHITE)
-                            .stroke_weight(0.5)
-                            .rgba(1., 0., 0., 0.1);
-                    } else {
-                        draw.rect()
-                            .xy(Vec2::new(
-                                (cc as f32 * self.resolution) - self.win_width / 2.0,
-                                (-1. * cr as f32 * self.resolution) + self.win_height / 2.0,
-                            ))
-                            .wh(Vec2::new(self.resolution, self.resolution))
-                            .stroke(WHITE)
-                            .stroke_weight(0.5)
-                            .no_fill();
-                    }
-                }
-            }
-        }
-    }
+    pub detect_mode: DetectMode,
 }
 
 impl<T: Boundary> Solver<T> {
     pub fn update(&mut self, dt: f32) {
+        let now = Instant::now();
         self.apply_gravity();
         self.apply_boundaries();
-        let now = Instant::now();
-        self.solve_grid_collisions();
-        // self.solve_collisions();
-        println!("{}", 1. / now.elapsed().as_secs_f32());
-        // self.solve_collisions();
+        match self.detect_mode {
+            DetectMode::SpatialPartition => self.solve_grid_collisions(),
+            DetectMode::Slow => self.solve_collisions(),
+        }
         self.update_positions(dt / (self.substeps as f32));
+        // println!("{}", 1. / now.elapsed().as_secs_f32());
+    }
+
+    pub fn set_image_colors(&mut self, image: &mut DynamicImage) {
+        let width_real = 1000.;
+        let height_real = 1000.;
+        let image = image.to_rgba8();
+        let image_pos = Vec2::new(-width_real / 2., height_real / 2.);
+        let num_x_pixels = image.width();
+        let num_y_pixels = image.height();
+        let pixel_size_real_x = width_real as f32 / num_x_pixels as f32;
+        let pixel_size_real_y = height_real as f32 / num_y_pixels as f32;
+
+        for i in 0..self.balls.len() {
+            let mut ball = self.balls[i].borrow_mut();
+            // Get relative to corner an index based on the pixel size
+            let mut py = (((height_real / 2.0) - ball.pos.y) / pixel_size_real_y) as usize;
+            let mut px = (((width_real / 2.0) + ball.pos.x) / pixel_size_real_x) as usize;
+            px = px.clamp(0, num_x_pixels as usize);
+            py = py.clamp(0, num_y_pixels as usize);
+            let rgba = image.get_pixel(px as u32, py as u32);
+            let r = rgba[0] as f32 / 255.;
+            let g = rgba[1] as f32 / 255.;
+            let b = rgba[2] as f32 / 255.;
+            let a = rgba[3] as f32 / 255.;
+            // println!("{} {} {} {}", r, g, b, a);
+            ball.color = Hsv::from(Rgb::new(r, g, b));
+        }
+    }
+
+    pub fn restart(&mut self) {
+        for cell in self.hash.grid.iter_mut() {
+            // cell.truncate(0);
+            cell.clear();
+        }
+        self.balls.clear();
     }
 
     fn check_cell_collisions(&mut self, cell_1_idx: (usize, usize), cell_2_idx: (usize, usize)) {
         // Loop over indicies to check for collisions in this kernel
-
         let cell_1 = self.hash.grid.get(cell_1_idx.0, cell_1_idx.1).unwrap();
         let cell_2 = self.hash.grid.get(cell_2_idx.0, cell_2_idx.1).unwrap();
         for current_idx in cell_1 {
@@ -110,8 +94,8 @@ impl<T: Boundary> Solver<T> {
                         let mut current_ball = self.balls.get_unchecked(*current_idx).borrow_mut();
                         let mut other_ball = self.balls.get_unchecked(*other_idx).borrow_mut();
                         if Ball::detect_pair_collide(&current_ball, &other_ball) {
-                            current_ball.color = Hsv::new(0., 1., 1.);
-                            other_ball.color = Hsv::new(0., 1., 1.);
+                            // current_ball.color = Hsv::new(0., 1., 1.);
+                            // other_ball.color = Hsv::new(0., 1., 1.);
                             did_collide = true;
                             Ball::resolve_pair_collide(&mut current_ball, &mut other_ball);
                         }
@@ -121,7 +105,7 @@ impl<T: Boundary> Solver<T> {
             if !did_collide {
                 unsafe {
                     let mut current_ball = self.balls.get_unchecked(*current_idx).borrow_mut();
-                    current_ball.color = Hsv::new(0., 0., 1.);
+                    // current_ball.color = Hsv::new(0., 0., 1.);
                 }
             }
         }
@@ -201,11 +185,11 @@ impl<T: Boundary> Solver<T> {
     fn apply_gravity(&mut self) {
         self.balls
             .iter_mut()
-            .for_each(|x| x.borrow_mut().accelerate(self.gravity));
-        // .for_each(|x| {
-        //     let pos = x.borrow().pos;
-        //     x.borrow_mut().accelerate(-2000. * pos.normalize())
-        // });
+            // .for_each(|x| x.borrow_mut().accelerate(self.gravity));
+            .for_each(|x| {
+                let pos = x.borrow().pos;
+                x.borrow_mut().accelerate(-20000. * pos.normalize())
+            });
     }
 
     pub fn solve_collisions(&mut self) {
@@ -216,8 +200,8 @@ impl<T: Boundary> Solver<T> {
                 let mut did_collide = false;
                 for mut other in before.iter_mut().chain(after) {
                     if Ball::detect_pair_collide(&current.borrow_mut(), &other.borrow_mut()) {
-                        current.borrow_mut().color = Hsv::new(0., 1., 1.);
-                        other.borrow_mut().color = Hsv::new(0., 1., 1.);
+                        // current.borrow_mut().color = Hsv::new(0., 1., 1.);
+                        // other.borrow_mut().color = Hsv::new(0., 1., 1.);
                         did_collide = true;
                         Ball::resolve_pair_collide(
                             &mut current.borrow_mut(),
@@ -226,7 +210,7 @@ impl<T: Boundary> Solver<T> {
                     }
                 }
                 if !did_collide {
-                    current.borrow_mut().color = Hsv::new(0., 0., 1.);
+                    // current.borrow_mut().color = Hsv::new(0., 0., 1.);
                 }
             }
         }
@@ -247,7 +231,7 @@ impl<T: Boundary> Solver<T> {
 
     pub fn init_balls(ball_radius: f32) -> Vec<RefCell<Ball>> {
         let mut vec_balls = Vec::<RefCell<Ball>>::new();
-        let max = 100; // try 60
+        let max = 0; // try 60
         let hue_step = 360. / ((max * max) as f32);
         let mut i = 0.;
         let max_radius = ball_radius;
