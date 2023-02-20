@@ -6,7 +6,7 @@ mod solver;
 mod spawn;
 use boundary::*;
 use nannou::image::io::Reader;
-use nannou::image::DynamicImage;
+use nannou::image::{DynamicImage, GenericImageView};
 use nannou::ui::color::DARK_CHARCOAL;
 use partition::*;
 use solver::*;
@@ -31,23 +31,24 @@ struct Model {
 }
 
 fn model(_app: &App) -> Model {
-    let ball_radius = 5.;
+    let ball_radius = 6.;
+    let image_name = "corgi.jpg";
     Model {
         ball_radius,
-        frames_for_color_reset: 2000,
+        frames_for_color_reset: 500,
         boundary_time: 0.,
         sync_frames: 0,
         sim_runs: 0,
-        color_image: Reader::open("cat.jpg").unwrap().decode().unwrap(),
+        color_image: Reader::open(image_name).unwrap().decode().unwrap(),
         spawners: vec![
             LinearSpawner::new(
-                Vec2::new(-400., 400.),
-                0.7 * -PI / 4.,
-                2,
-                5.,
-                10,
+                Vec2::new(-200., 250.),
+                0.3 * -PI / 2.,
+                1,
+                2.,
+                15,
                 false,
-                9530,
+                6300,
             ),
             // LinearSpawner::new(Vec2::new(150., 200.), PI, 3, 5., 10, false, 6074),
             // LinearSpawner::new(Vec2::new(-150., -150.), 0., 6, 4., 5, false),
@@ -56,10 +57,16 @@ fn model(_app: &App) -> Model {
         ],
         solver: Solver {
             gravity: Vec2::new(0.0, -20000.),
-            balls: Solver::<CircleBound>::init_balls(ball_radius),
-            hash: SpatialHash::new(ball_radius, 1000., 1000.),
-            substeps: 10,
-            pixel_scale: 1000. / 250.,
+            balls: Solver::<RectBound>::init_balls(ball_radius),
+            hash: SpatialHash::new(ball_radius, 900., 900.),
+            substeps: 8,
+            pixel_scale: 900.
+                / Reader::open(image_name)
+                    .unwrap()
+                    .decode()
+                    .unwrap()
+                    .dimensions()
+                    .0 as f32,
             detect_mode: DetectMode::SpatialPartition,
             colormap: vec![],
             boundaries: vec![
@@ -69,7 +76,7 @@ fn model(_app: &App) -> Model {
                 //     kind: BoundaryType::Inner,
                 // },
                 // CircleBound {
-                //     pos: Vec2::new(400., 0.),
+                //     pos: Vec2::new(0., -400.),
                 //     radius: 100.,
                 //     kind: BoundaryType::Outer,
                 // },
@@ -86,8 +93,8 @@ fn model(_app: &App) -> Model {
                 RectBound {
                     pos: Vec2::new(0., 0.),
                     kind: BoundaryType::Inner,
-                    width: 900.,
-                    height: 900.,
+                    width: 880.,
+                    height: 880.,
                 },
                 // RectBound {
                 //     pos: Vec2::new(0., 0.),
@@ -98,22 +105,23 @@ fn model(_app: &App) -> Model {
             ],
         },
 
-        timestep: 0.008,
+        timestep: 0.0005,
     }
 }
 
 fn update(_app: &App, _model: &mut Model, _update: Update) {
     // Critical Updates
     _model.solver.update(_model.timestep);
-    _model.boundary_time += _model.timestep;
     let frames = _app.elapsed_frames() as usize;
     if _model.sim_runs < 2 {
         _model.sync_frames += 1;
     }
+    _model.boundary_time += 0.01;
     // println!("Frame {}", frames);
-
+    // println!("{}", _model.boundary_time);
     // Animations
-    let w = -2. * 3.14159 / 10.;
+    let f = 2.;
+    let w = -2. * 3.14159 * f;
     let r = 400. - 20.;
     // let mouse_bound = &mut _model.solver.boundaries[1];
     // mouse_bound.pos.x = _app.mouse.x;
@@ -133,7 +141,7 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
             _model.ball_radius,
             _model.boundary_time,
             _model.sync_frames,
-            |t| 0.,
+            |t| 0.1 * (t * w).sin(),
             &mut _model.solver.colormap,
         )
     }

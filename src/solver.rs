@@ -35,13 +35,16 @@ pub struct Solver<T: Boundary> {
 impl<T: Boundary> Solver<T> {
     pub fn update(&mut self, dt: f32) {
         let now = Instant::now();
-        self.apply_gravity();
-        self.apply_boundaries();
-        match self.detect_mode {
-            DetectMode::SpatialPartition => self.solve_grid_collisions(),
-            DetectMode::Slow => self.solve_collisions(),
+        let subdt = dt / (self.substeps as f32);
+        for _ in 0..self.substeps {
+            self.apply_gravity();
+            self.apply_boundaries();
+            match self.detect_mode {
+                DetectMode::SpatialPartition => self.solve_grid_collisions(),
+                DetectMode::Slow => self.solve_collisions(),
+            }
+            self.update_positions(subdt);
         }
-        self.update_positions(dt / (self.substeps as f32));
         // println!("{}", 1. / now.elapsed().as_secs_f32());
     }
 
@@ -166,6 +169,7 @@ impl<T: Boundary> Solver<T> {
     }
 
     fn apply_boundaries(&mut self) {
+        // for _ in 0..self.substeps {
         self.boundaries.iter().for_each(|bound| {
             self.balls.iter_mut().for_each(|ball| match bound.kind() {
                 BoundaryType::Inner => {
@@ -180,6 +184,7 @@ impl<T: Boundary> Solver<T> {
                 }
             })
         });
+        // }
     }
     fn apply_gravity(&mut self) {
         self.balls

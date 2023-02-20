@@ -34,20 +34,20 @@ impl Boundary for RectBound {
         let left = self.pos.x - half_width;
         let right = self.pos.x + half_width;
 
-        if ball.pos.y < bot {
-            ball.pos.y = self.pos.y - half_height + ball.radius;
+        if ball.pos.y < bot + ball.radius {
+            ball.pos.y = bot + ball.radius;
         }
-        if ball.pos.y > top {
+        if ball.pos.y > top - ball.radius {
             // y collide
-            ball.pos.y = self.pos.y + half_height - ball.radius;
+            ball.pos.y = top - ball.radius;
         }
 
-        if ball.pos.x < left {
-            ball.pos.x = self.pos.x - half_width + ball.radius;
+        if ball.pos.x < left + ball.radius {
+            ball.pos.x = left + ball.radius;
         }
-        if ball.pos.x > right {
+        if ball.pos.x > right - ball.radius {
             // x collide
-            ball.pos.x = self.pos.x + half_width - ball.radius;
+            ball.pos.x = right - ball.radius;
         }
     }
     fn apply_outer_constraint(&self, ball: &mut Ball) {
@@ -74,10 +74,10 @@ impl Boundary for RectBound {
         }
     }
     fn detect_inner_collision(&self, ball: &Ball) -> bool {
-        let bot = self.pos.y - self.height / 2.;
-        let top = self.pos.y + self.height / 2.;
-        let left = self.pos.x - self.width / 2.;
-        let right = self.pos.x + self.width / 2.;
+        let bot = self.pos.y - self.height / 2. + ball.radius;
+        let top = self.pos.y + self.height / 2. - ball.radius;
+        let left = self.pos.x - self.width / 2. + ball.radius;
+        let right = self.pos.x + self.width / 2. - ball.radius;
 
         ball.pos.y < bot || ball.pos.y > top || ball.pos.x < left || ball.pos.x > right
     }

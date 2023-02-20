@@ -70,14 +70,15 @@ impl Spawner for LinearSpawner {
         angle_driver: D,
         color_map: &mut Vec<Rgba>,
     ) {
+        let angle_offset = self.angle + (angle_driver)(time);
+        // println!("{}", angle_offset);
+        println!("Spawn Count {} Frame {}", self.spawn_count, frame_count);
         if frame_count % self.spawn_period == 0 {
-            let angle_offset = self.angle + (angle_driver)(time);
             let normal = Vec2::new(1., 0.).rotate(angle_offset).normalize();
             let tangent = Vec2::new(1., 0.).rotate(angle_offset + PI / 2.).normalize();
             let space = 2. * ball_radius;
-            println!("Spawn Count {} Frame {}", self.spawn_count, frame_count);
             for i in 0..self.rows {
-                let mut color = Rgba::from(Hsv::new(self.spawn_count as f32 * 50. / 360., 1., 1.));
+                let mut color = Rgba::from(Hsv::new(self.spawn_count as f32 * 25. / 360., 1., 1.));
                 let spawn_pos = self.pos - (self.rows as f32 / 2. * space * tangent)
                     + (i as f32) * space * tangent;
                 if color_map.get(self.spawn_count).is_some() {
