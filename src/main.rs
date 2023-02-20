@@ -1,5 +1,6 @@
 use nannou::prelude::*;
 mod ball;
+use std::time::Instant;
 mod boundary;
 mod partition;
 mod solver;
@@ -31,24 +32,28 @@ struct Model {
 }
 
 fn model(_app: &App) -> Model {
-    let ball_radius = 6.;
-    let image_name = "corgi.jpg";
+    let ball_radius = 2.;
+    let image_name = "mai.jpg";
+    let spawn_period = 1;
+    let num_rows = 8;
+    let num_balls = 22036;
+    let frames_for_color_reset = (num_balls / num_rows + 1) / spawn_period + 20;
     Model {
         ball_radius,
-        frames_for_color_reset: 500,
+        frames_for_color_reset,
         boundary_time: 0.,
         sync_frames: 0,
         sim_runs: 0,
         color_image: Reader::open(image_name).unwrap().decode().unwrap(),
         spawners: vec![
             LinearSpawner::new(
-                Vec2::new(-200., 250.),
-                0.3 * -PI / 2.,
-                1,
+                Vec2::new(-350., 350.),
+                0.4 * -PI / 2.,
+                spawn_period,
                 2.,
-                15,
+                num_rows,
                 false,
-                6300,
+                num_balls,
             ),
             // LinearSpawner::new(Vec2::new(150., 200.), PI, 3, 5., 10, false, 6074),
             // LinearSpawner::new(Vec2::new(-150., -150.), 0., 6, 4., 5, false),
@@ -56,7 +61,7 @@ fn model(_app: &App) -> Model {
             // LinearSpawner::new(Vec2::new(-150., 150.), 0., 6, 4., 5, false),
         ],
         solver: Solver {
-            gravity: Vec2::new(0.0, -20000.),
+            gravity: Vec2::new(0.0, -20000000.),
             balls: Solver::<RectBound>::init_balls(ball_radius),
             hash: SpatialHash::new(ball_radius, 900., 900.),
             substeps: 8,
@@ -105,12 +110,13 @@ fn model(_app: &App) -> Model {
             ],
         },
 
-        timestep: 0.0005,
+        timestep: 0.00005,
     }
 }
 
 fn update(_app: &App, _model: &mut Model, _update: Update) {
     // Critical Updates
+    let now = Instant::now();
     _model.solver.update(_model.timestep);
     let frames = _app.elapsed_frames() as usize;
     if _model.sim_runs < 2 {
@@ -159,6 +165,7 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
     if frames % _model.frames_for_color_reset == 0 && frames > 0 {
         _model.sim_runs += 1;
     }
+    println!("FPS {}", 1. / now.elapsed().as_secs_f32());
     // _model.spawners[0].set_pos(_app.mouse.position());
     // let inner_bound = &mut _model.solver.boundaries[3];
     // inner_bound.radius = 70. + 70. * (time * 7. * w).sin();

@@ -116,45 +116,42 @@ impl<T: Boundary> Solver<T> {
     fn solve_grid_collisions(&mut self) {
         // TODO: Refactor this
         let mut to_check: Vec<usize> = Vec::new();
-        for _ in 0..self.substeps {
-            // Insert into grid
-            // println!("{} {}", rows, cols);
-            for cell in self.hash.grid.iter_mut() {
-                // cell.truncate(0);
-                cell.clear();
-            }
+        // Insert into grid
+        // println!("{} {}", rows, cols);
+        for cell in self.hash.grid.iter_mut() {
+            // cell.truncate(0);
+            cell.clear();
+        }
 
-            // let now = Instant::now();
-            // Hash the balls
-            self.balls.iter().enumerate().for_each(|(i, ball)| {
-                self.hash.hash(ball.borrow().pos, i);
-            });
+        // let now = Instant::now();
+        // Hash the balls
+        self.balls.iter().enumerate().for_each(|(i, ball)| {
+            self.hash.hash(ball.borrow().pos, i);
+        });
 
-            // println!("Time hash {}", now.elapsed().as_secs_f32());
-            // Detect collisions
+        // println!("Time hash {}", now.elapsed().as_secs_f32());
+        // Detect collisions
 
-            let now = Instant::now();
-            let (rows, cols) = self.hash.grid.size();
-            // println!("{} {}", rows, cols);
-            for cr in 1..rows - 1 {
-                for cc in 1..cols - 1 {
-                    // Loop around each cell
-                    to_check.clear();
-                    let current_cell_idx = (cr, cc);
-                    for i in 0..3 {
-                        for j in 0..3 {
-                            // True index
-                            let current_row = cr + i - 1;
-                            let current_col = cc + j - 1;
-                            // println!("Here before clamp{} {}", current_row, current_col);
-                            // Clamp to valid index
-                            let current_row = current_row.clamp(0, rows);
-                            let current_col = current_col.clamp(0, cols);
-                            // println!("Here {} {}", current_row, current_col);
-                            let other_cell_idx = (current_row, current_col);
-                            let other_cell = self.hash.grid.get(current_row, current_col).unwrap();
-                            self.check_cell_collisions(current_cell_idx, other_cell_idx);
-                        }
+        let now = Instant::now();
+        let (rows, cols) = self.hash.grid.size();
+        for cr in 1..rows - 1 {
+            for cc in 1..cols - 1 {
+                // Loop around each cell
+                to_check.clear();
+                let current_cell_idx = (cr, cc);
+                for i in 0..3 {
+                    for j in 0..3 {
+                        // True index
+                        let current_row = cr + i - 1;
+                        let current_col = cc + j - 1;
+                        // println!("Here before clamp{} {}", current_row, current_col);
+                        // Clamp to valid index
+                        let current_row = current_row.clamp(0, rows);
+                        let current_col = current_col.clamp(0, cols);
+                        // println!("Here {} {}", current_row, current_col);
+                        let other_cell_idx = (current_row, current_col);
+                        let other_cell = self.hash.grid.get(current_row, current_col).unwrap();
+                        self.check_cell_collisions(current_cell_idx, other_cell_idx);
                     }
                 }
             }
