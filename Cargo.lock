@@ -646,8 +646,9 @@ dependencies = [
 
 [[package]]
 name = "fast_circles"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
+ "float-ord",
  "grid",
  "nannou",
  "random",
@@ -670,6 +671,12 @@ name = "fixedbitset"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
+
+[[package]]
+name = "float-ord"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ce81f49ae8a0482e4c55ea62ebbd7e5a686af544c00b9d090bba3ff9be97b3d"
 
 [[package]]
 name = "fnv"

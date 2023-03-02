@@ -1,4 +1,5 @@
 use crate::ball::*;
+use float_ord::FloatOrd;
 use nannou::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -12,7 +13,9 @@ pub trait Boundary {
     fn apply_inner_constraint(&self, ball: &mut Ball);
     fn detect_inner_collision(&self, ball: &Ball) -> bool;
     fn detect_outer_collision(&self, ball: &Ball) -> bool;
+    fn set_pos(&mut self, new_pos: Vec2);
     fn draw(&self, draw: &Draw);
+    fn sink(&self) -> bool;
 }
 
 pub struct RectBound {
@@ -20,11 +23,18 @@ pub struct RectBound {
     pub kind: BoundaryType,
     pub width: f32,
     pub height: f32,
+    pub sink: bool,
 }
 
 impl Boundary for RectBound {
+    fn sink(&self) -> bool {
+        self.sink
+    }
     fn kind(&self) -> BoundaryType {
         return self.kind;
+    }
+    fn set_pos(&mut self, new_pos: Vec2) {
+        self.pos = new_pos;
     }
     fn apply_inner_constraint(&self, ball: &mut Ball) {
         let half_width = self.width / 2.;
@@ -58,19 +68,32 @@ impl Boundary for RectBound {
         let left = self.pos.x - half_width;
         let right = self.pos.x + half_width;
 
-        if (ball.pos.y > bot && ball.pos.y < top) && (ball.pos.x > left && ball.pos.x < right) {
-            if ball.pos.y < self.pos.y {
-                ball.pos.y = bot - ball.radius;
-            }
-            if ball.pos.y > self.pos.y {
-                ball.pos.y = top + ball.radius;
-            }
-            if ball.pos.x < self.pos.x {
-                ball.pos.x = left - ball.radius;
-            }
-            if ball.pos.x > self.pos.x {
-                ball.pos.x = right + ball.radius;
-            }
+        let dbot = (ball.pos.y - bot).abs();
+        let dtop = (ball.pos.y - top).abs();
+        let dleft = (ball.pos.x - left).abs();
+        let dright = (ball.pos.x - right).abs();
+
+        enum Side {
+            Bot,
+            Top,
+            Left,
+            Right,
+        }
+
+        let dists = vec![
+            (Side::Bot, FloatOrd(dbot)),
+            (Side::Top, FloatOrd(dtop)),
+            (Side::Left, FloatOrd(dleft)),
+            (Side::Right, FloatOrd(dright)),
+        ];
+
+        let min_dist = dists.iter().min_by_key(|(tp, val)| val).unwrap();
+
+        match min_dist.0 {
+            Side::Bot => ball.pos.y = bot - 2. * ball.radius,
+            Side::Top => ball.pos.y = top + 2. * ball.radius,
+            Side::Left => ball.pos.x = left - 2. * ball.radius,
+            Side::Right => ball.pos.x = right + 2. * ball.radius,
         }
     }
     fn detect_inner_collision(&self, ball: &Ball) -> bool {
@@ -104,11 +127,18 @@ pub struct CircleBound {
     pub pos: Vec2,
     pub radius: f32,
     pub kind: BoundaryType,
+    pub sink: bool,
 }
 
 impl Boundary for CircleBound {
+    fn sink(&self) -> bool {
+        self.sink
+    }
     fn kind(&self) -> BoundaryType {
         return self.kind;
+    }
+    fn set_pos(&mut self, new_pos: Vec2) {
+        self.pos = new_pos;
     }
     fn apply_inner_constraint(&self, ball: &mut Ball) {
         let normal = (ball.pos - self.pos).normalize();

@@ -21,10 +21,10 @@ pub enum ColorMode {
     Index,
 }
 
-pub struct Solver<T: Boundary> {
+pub struct Solver {
     pub gravity: Vec2,
     pub balls: Vec<RefCell<Ball>>,
-    pub boundaries: Vec<T>,
+    pub boundaries: Vec<Box<dyn Boundary>>,
     pub substeps: usize,
     pub hash: SpatialHash,
     pub detect_mode: DetectMode,
@@ -32,7 +32,7 @@ pub struct Solver<T: Boundary> {
     pub pixel_scale: f32,
 }
 
-impl<T: Boundary> Solver<T> {
+impl Solver {
     pub fn update(&mut self, dt: f32) {
         let now = Instant::now();
         let subdt = dt / (self.substeps as f32);
@@ -186,11 +186,11 @@ impl<T: Boundary> Solver<T> {
     fn apply_gravity(&mut self) {
         self.balls
             .iter_mut()
-            .for_each(|x| x.borrow_mut().accelerate(self.gravity));
-        // .for_each(|x| {
-        //     let pos = x.borrow().pos;
-        //     x.borrow_mut().accelerate(-20000. * pos.normalize())
-        // });
+            // .for_each(|x| x.borrow_mut().accelerate(self.gravity));
+            .for_each(|x| {
+                let pos = x.borrow().pos;
+                x.borrow_mut().accelerate(-2000000000. * pos.normalize())
+            });
     }
 
     pub fn solve_collisions(&mut self) {

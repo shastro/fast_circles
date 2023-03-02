@@ -71,7 +71,6 @@ impl Spawner for LinearSpawner {
         color_map: &mut Vec<Rgba>,
     ) {
         let angle_offset = self.angle + (angle_driver)(time);
-        // println!("{}", angle_offset);
         println!("Spawn Count {} Frame {}", self.spawn_count, frame_count);
         if frame_count % self.spawn_period == 0 {
             let normal = Vec2::new(1., 0.).rotate(angle_offset).normalize();

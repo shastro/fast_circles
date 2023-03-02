@@ -14,13 +14,14 @@ use solver::*;
 use spawn::*;
 use std::fs;
 use std::io::Cursor;
+use std::thread::sleep;
 
 fn main() {
     nannou::app(model).update(update).simple_window(view).run();
 }
 
 struct Model {
-    solver: Solver<RectBound>,
+    solver: Solver,
     timestep: f32,
     ball_radius: f32,
     spawners: Vec<LinearSpawner>,
@@ -32,13 +33,14 @@ struct Model {
 }
 
 fn model(_app: &App) -> Model {
-    let ball_radius = 2.;
-    let image_name = "mai.jpg";
+    let ball_radius = 4.;
+    let image_name = "cat2.jpg";
     let spawn_period = 1;
-    let num_rows = 8;
-    let num_balls = 22036;
-    let frames_for_color_reset = (num_balls / num_rows + 1) / spawn_period + 20;
-    Model {
+    let num_rows = 5;
+    let num_balls = 6150 * 10000;
+    let frames_for_color_reset = (num_balls / num_rows) * spawn_period + 1000000;
+    // let frames_for_color_reset = 1000000;
+    let mut model = Model {
         ball_radius,
         frames_for_color_reset,
         boundary_time: 0.,
@@ -51,18 +53,30 @@ fn model(_app: &App) -> Model {
                 0.4 * -PI / 2.,
                 spawn_period,
                 2.,
+                Vec2::new(0., 350.),
+                -PI / 3.,
+                spawn_period,
+                1.,
                 num_rows,
                 false,
                 num_balls,
             ),
-            // LinearSpawner::new(Vec2::new(150., 200.), PI, 3, 5., 10, false, 6074),
+            // LinearSpawner::new(
+            //     Vec2::new(0., -350.),
+            //     PI / 2.,
+            //     1,
+            //     3.,
+            //     num_rows,
+            //     false,
+            //     num_balls,
+            // ),
             // LinearSpawner::new(Vec2::new(-150., -150.), 0., 6, 4., 5, false),
             // LinearSpawner::new(Vec2::new(150., -150.), 0., 6, 4., 5, false),
             // LinearSpawner::new(Vec2::new(-150., 150.), 0., 6, 4., 5, false),
         ],
         solver: Solver {
-            gravity: Vec2::new(0.0, -20000000.),
-            balls: Solver::<RectBound>::init_balls(ball_radius),
+            gravity: Vec2::new(0.0, -4000000000.),
+            balls: Solver::init_balls(ball_radius),
             hash: SpatialHash::new(ball_radius, 900., 900.),
             substeps: 8,
             pixel_scale: 900.
@@ -75,43 +89,48 @@ fn model(_app: &App) -> Model {
             detect_mode: DetectMode::SpatialPartition,
             colormap: vec![],
             boundaries: vec![
-                // CircleBound {
-                //     pos: Vec2::new(0., 0.),
-                //     radius: 400.,
-                //     kind: BoundaryType::Inner,
-                // },
-                // CircleBound {
-                //     pos: Vec2::new(0., -400.),
-                //     radius: 100.,
-                //     kind: BoundaryType::Outer,
-                // },
-                // CircleBound {
-                //     pos: Vec2::new(2000., 2000.),
-                //     radius: 80.,
-                //     kind: BoundaryType::Outer,
-                // },
-                // CircleBound {
-                //     pos: Vec2::new(0., -200.),
-                //     radius: 50.,
-                //     kind: BoundaryType::Outer,
-                // },
-                RectBound {
+                Box::new(RectBound {
                     pos: Vec2::new(0., 0.),
                     kind: BoundaryType::Inner,
                     width: 880.,
                     height: 880.,
-                },
-                // RectBound {
+                    sink: false,
+                }),
+                // Box::new(CircleBound {
+                //     pos: Vec2::new(0., 0.),
+                //     kind: BoundaryType::Outer,
+                //     radius: 20.,
+                //     sink: false,
+                // }),
+                // Box::new(RectBound {
                 //     pos: Vec2::new(0., 0.),
                 //     kind: BoundaryType::Outer,
                 //     width: 300.,
                 //     height: 100.,
-                // },
+                //     sink: false,
+                // }),
             ],
         },
 
-        timestep: 0.00005,
-    }
+        timestep: 0.000011,
+    };
+
+    // Create funnel
+    // let mut sign = 1.;
+    // let gap = 23.;
+    // for i in 0..32 {
+    //     let count = i / 2;
+    //     model.solver.boundaries.push(Box::new(CircleBound {
+    //         pos: Vec2::new(
+    //             sign * gap + ((count + 1) as f32 * sign as f32) * 10.,
+    //             count as f32 * 30.,
+    //         ),
+    //         radius: 15.,
+    //         kind: BoundaryType::Outer,
+    //     }));
+    //     sign *= -1.;
+    // }
+    model
 }
 
 fn update(_app: &App, _model: &mut Model, _update: Update) {
@@ -123,15 +142,15 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
         _model.sync_frames += 1;
     }
     _model.boundary_time += 0.01;
-    // println!("Frame {}", frames);
-    // println!("{}", _model.boundary_time);
+
     // Animations
-    let f = 2.;
+    let f = 1.;
     let w = -2. * 3.14159 * f;
     let r = 400. - 20.;
     // let mouse_bound = &mut _model.solver.boundaries[1];
-    // mouse_bound.pos.x = _app.mouse.x;
-    // mouse_bound.pos.y = _app.mouse.y;
+
+    let spawner = &mut _model.spawners[0];
+    // mouse_bound.set_pos(_app.mouse.position());
     // let move_bound = &mut _model.solver.boundaries[1];
     // move_bound.pos.x = r * (_model.boundary_time * w).cos();
     // move_bound.pos.y = r * (_model.boundary_time * w).sin();
@@ -147,7 +166,7 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
             _model.ball_radius,
             _model.boundary_time,
             _model.sync_frames,
-            |t| 0.1 * (t * w).sin(),
+            |t| (0.1 * (t * w + (i as f32) * PI).sin()),
             &mut _model.solver.colormap,
         )
     }
@@ -165,7 +184,18 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
     if frames % _model.frames_for_color_reset == 0 && frames > 0 {
         _model.sim_runs += 1;
     }
-    println!("FPS {}", 1. / now.elapsed().as_secs_f32());
+
+    _model
+        .solver
+        .balls
+        .retain(|b| b.borrow().pos.length_squared() > 800.);
+
+    let time_ran = now.elapsed();
+    let target_time = std::time::Duration::from_millis(16);
+    if time_ran < target_time {
+        std::thread::sleep(target_time - time_ran);
+    }
+    println!("\nFPS {}", 1. / now.elapsed().as_secs_f32());
     // _model.spawners[0].set_pos(_app.mouse.position());
     // let inner_bound = &mut _model.solver.boundaries[3];
     // inner_bound.radius = 70. + 70. * (time * 7. * w).sin();
