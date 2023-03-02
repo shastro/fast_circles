@@ -33,11 +33,11 @@ struct Model {
 }
 
 fn model(_app: &App) -> Model {
-    let ball_radius = 4.;
+    let ball_radius = 3.;
     let image_name = "cat2.jpg";
     let spawn_period = 1;
-    let num_rows = 5;
-    let num_balls = 6150 * 10000;
+    let num_rows = 15;
+    let num_balls = 10000;
     let frames_for_color_reset = (num_balls / num_rows) * spawn_period + 1000000;
     // let frames_for_color_reset = 1000000;
     let mut model = Model {
@@ -49,12 +49,8 @@ fn model(_app: &App) -> Model {
         color_image: Reader::open(image_name).unwrap().decode().unwrap(),
         spawners: vec![
             LinearSpawner::new(
-                Vec2::new(-350., 350.),
-                0.4 * -PI / 2.,
-                spawn_period,
-                2.,
                 Vec2::new(0., 350.),
-                -PI / 3.,
+                -PI - 0.05,
                 spawn_period,
                 1.,
                 num_rows,
@@ -96,12 +92,12 @@ fn model(_app: &App) -> Model {
                     height: 880.,
                     sink: false,
                 }),
-                // Box::new(CircleBound {
-                //     pos: Vec2::new(0., 0.),
-                //     kind: BoundaryType::Outer,
-                //     radius: 20.,
-                //     sink: false,
-                // }),
+                Box::new(CircleBound {
+                    pos: Vec2::new(0., 0.),
+                    kind: BoundaryType::Outer,
+                    radius: 95.,
+                    sink: false,
+                }),
                 // Box::new(RectBound {
                 //     pos: Vec2::new(0., 0.),
                 //     kind: BoundaryType::Outer,
@@ -188,7 +184,7 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
     _model
         .solver
         .balls
-        .retain(|b| b.borrow().pos.length_squared() > 800.);
+        .retain(|b| b.borrow().pos.length_squared() > (100f32).pow(2.));
 
     let time_ran = now.elapsed();
     let target_time = std::time::Duration::from_millis(16);
