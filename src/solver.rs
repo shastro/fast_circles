@@ -205,12 +205,15 @@ impl Solver {
     }
 
     pub fn draw(&self, draw: &Draw) {
+        let d = draw;
         self.balls.iter().for_each(|ball| {
             let ball = ball.borrow();
-            draw.ellipse()
+            d.ellipse()
                 .color(ball.color)
                 .xy(ball.pos)
+                .resolution(5.)
                 .radius(ball.radius);
+            // .finish();
         });
 
         self.boundaries.iter().for_each(|bound| bound.draw(draw));

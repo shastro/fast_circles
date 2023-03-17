@@ -35,12 +35,13 @@ struct Model {
 }
 
 fn model(_app: &App) -> Model {
-    let ball_radius = 3.;
+    let ball_radius = 5.;
     let image_name = "cat2.jpg";
     let spawn_period = 1;
-    let num_rows = 15;
-    let num_balls = 20000;
-    let frames_for_color_reset = (num_balls / num_rows) * spawn_period + 1000000;
+    // let num_rows = 880 / (2 * ball_radius as usize);
+    let num_rows = 10;
+    let num_balls = 7550;
+    let frames_for_color_reset = (num_balls / num_rows) * spawn_period + 100;
     // let frames_for_color_reset = 1000000;
     let mut model = Model {
         fps: 0.,
@@ -53,10 +54,10 @@ fn model(_app: &App) -> Model {
         color_image: Reader::open(image_name).unwrap().decode().unwrap(),
         spawners: vec![
             LinearSpawner::new(
-                Vec2::new(0., 350.),
-                -PI,
+                Vec2::new(0., 440. - 100.),
+                -PI / 2.,
                 spawn_period,
-                1.,
+                2.,
                 num_rows,
                 false,
                 num_balls,
@@ -75,7 +76,7 @@ fn model(_app: &App) -> Model {
             // LinearSpawner::new(Vec2::new(-150., 150.), 0., 6, 4., 5, false),
         ],
         solver: Solver {
-            gravity: Vec2::new(0.0, -800000000.),
+            gravity: Vec2::new(0.0, 0.),
             balls: Solver::init_balls(ball_radius),
             hash: SpatialHash::new(ball_radius, 900., 900.),
             substeps: 8,
@@ -96,18 +97,30 @@ fn model(_app: &App) -> Model {
                     height: 880.,
                     sink: false,
                 }),
+                // Box::new(CircleBound {
+                //     pos: Vec2::new(0., 0.),
+                //     kind: BoundaryType::Outer,
+                //     radius: 50.,
+                //     sink: false,
+                // }),
+                // Box::new(CircleBound {
+                //     pos: Vec2::new(0., -220.),
+                //     kind: BoundaryType::Outer,
+                //     radius: 10.,
+                //     sink: false,
+                // }),
                 Box::new(CircleBound {
-                    pos: Vec2::new(0., 0.),
+                    pos: Vec2::new(-150., 0.),
                     kind: BoundaryType::Outer,
-                    radius: 95.,
+                    radius: 50.,
                     sink: false,
                 }),
-                Box::new(CircleBound {
-                    pos: Vec2::new(0., -220.),
-                    kind: BoundaryType::Outer,
-                    radius: 10.,
-                    sink: false,
-                }),
+                // Box::new(CircleBound {
+                //     pos: Vec2::new(150., 0.),
+                //     kind: BoundaryType::Outer,
+                //     radius: 50.,
+                //     sink: false,
+                // }),
                 // Box::new(RectBound {
                 //     pos: Vec2::new(0., 0.),
                 //     kind: BoundaryType::Outer,
@@ -118,21 +131,22 @@ fn model(_app: &App) -> Model {
             ],
         },
 
-        timestep: 0.000011,
+        timestep: 0.0000000011,
     };
 
     // Create funnel also abstract later
     // let mut sign = 1.;
-    // let gap = 23.;
-    // for i in 0..32 {
+    // let gap = 70.;
+    // for i in 0..24 {
     //     let count = i / 2;
     //     model.solver.boundaries.push(Box::new(CircleBound {
     //         pos: Vec2::new(
     //             sign * gap + ((count + 1) as f32 * sign as f32) * 10.,
-    //             count as f32 * 30.,
+    //             -200. + count as f32 * 30.,
     //         ),
     //         radius: 15.,
     //         kind: BoundaryType::Outer,
+    //         sink: false,
     //     }));
     //     sign *= -1.;
     // }
@@ -153,10 +167,10 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
     let f = 1.;
     let w = -2. * 3.14159 * f;
     let r = 400. - 20.;
-    let mouse_bound = &mut _model.solver.boundaries[2];
+    let mouse_bound = &mut _model.solver.boundaries[1];
     mouse_bound.set_pos(_app.mouse.position());
 
-    let spawner = &mut _model.spawners[0];
+    // let spawner = &mut _model.spawners[0];
     // let move_bound = &mut _model.solver.boundaries[1];
     // move_bound.pos.x = r * (_model.boundary_time * w).cos();
     // move_bound.pos.y = r * (_model.boundary_time * w).sin();
@@ -173,6 +187,7 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
             _model.ball_radius,
             _model.boundary_time,
             _model.sync_frames,
+            // |t| 0.0,
             |t| (0.15 * (t * w).sin()),
             &mut _model.solver.colormap,
         );
@@ -201,7 +216,7 @@ fn update(_app: &App, _model: &mut Model, _update: Update) {
     //     .balls
     //     .retain(|b| b.borrow().pos.length_squared() > (100f32).pow(2.));
 
-    _model.solver.balls.retain(|b| b.borrow().pos.y > -435.);
+    // _model.solver.balls.retain(|b| b.borrow().pos.y > -420.);
     // Update count
     _model.ball_count = _model.solver.balls.len();
 
@@ -220,7 +235,7 @@ fn view(_app: &App, _model: &Model, frame: Frame) {
 
     _model.solver.draw(&draw);
 
-    draw.text(format!("FPS {:.0} Ball Count {}", _model.fps, _model.ball_count).as_str())
+    draw.text(format!("FPS {:.0} Ball Count {}", _app.fps(), _model.ball_count).as_str())
         .font_size(30)
         .width(800.)
         .xy(Vec2::new(-300., 460.));
